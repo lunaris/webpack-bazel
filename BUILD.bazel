@@ -6,20 +6,31 @@ package(default_visibility = ["//visibility:public"])
 load("@build_bazel_rules_nodejs//:defs.bzl", "nodejs_binary")
 load(":webpack.bzl", "webpack_bundle")
 
-nodejs_binary(
-    name = "webpack",
-    entry_point = "webpack-cli/bin/cli.js",
-    data = [
-        "@npm//webpack-cli",
-        "@npm//html-webpack-plugin",
-        "@npm//babel-loader"
-    ],
-)
-
 webpack_bundle(
     name = "bundle",
-    srcs = glob(["src/**"]), #+ ["@npm//:node_modules"],
-    config = "webpack.config.js",
-    outputs = ["dist/index.html", "dist/bundle.js"],
-    webpack = ":webpack"
+    config = "//:webpack.config.js",
+    plugins = [
+        "@npm//webpack-cli",
+        "@npm//html-webpack-plugin",
+    ],
+    srcs = glob(["src/**"]),
 )
+
+# nodejs_binary(
+#     name = "webpack",
+#     entry_point = "webpack-cli/bin/cli.js",
+#     data = [
+#         "@npm//webpack-cli",
+#         "@npm//html-webpack-plugin",
+#         #"@npm//babel-loader",
+#         "//:src",
+#     ],
+# )
+#
+# webpack_bundle(
+#     name = "bundle",
+#     srcs = glob(["src/**"]), #+ ["@npm//:node_modules"],
+#     config = "webpack.config.js",
+#     outputs = ["dist/index.html", "dist/bundle.js"],
+#     webpack = ":webpack"
+# )

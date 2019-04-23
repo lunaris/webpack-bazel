@@ -1,26 +1,45 @@
-# https://github.com/bazelbuild/rules_nodejs/blob/c2256c58932cc4d84281b4e5709ef304a1c613eb/packages/labs/webpack/src/webpack_bundle.bzl
+load("@build_bazel_rules_nodejs//:defs.bzl", "nodejs_binary")
 
-def _webpack_bundle(ctx):
-    ctx.actions.run(
-        inputs = ctx.files.srcs + [ctx.file.config],
-        executable = ctx.executable.webpack,
-        outputs = ctx.outputs.outputs,
-        arguments = ["--mode", "development"],
-        progress_message = "Bundling with Webpack...",
+def webpack_bundle(
+    name,
+    config,
+    plugins = [],
+    srcs = [],
+    ):
+
+    nodejs_binary(
+        name = name + "@builder",
+        entry_point = "webpack-cli/bin/cli.js",
+        data = plugins + srcs,
     )
-    return [DefaultInfo()]
 
+    _webpack_bundle(
+        name = name,
+        wrapper = name + "@builder",
+        config = config,
+    )
 
-webpack_bundle = rule(
-    implementation = _webpack_bundle,
+def _webpack_bundle_impl(ctx):
+    ctx.actions.run(
+        outputs = [ctx.outputs.o],
+        arguments = [
+            "--config", ctx.file.config.path,
+        ],
+        executable = ctx.executable.wrapper,
+    )
+
+_webpack_bundle = rule(
+    implementation = _webpack_bundle_impl,
     attrs = {
-        "srcs": attr.label_list(allow_files = True),
-        "config": attr.label(allow_single_file = True, mandatory = True),
-        "outputs": attr.output_list(mandatory = True),
-        "webpack": attr.label(
-            default = "@npm//webpack-cli/bin:webpack-cli",
+        "wrapper": attr.label(
             executable = True,
-            cfg = "host"
+            cfg = "host",
         ),
+        "config": attr.label(
+            allow_single_file = True,
+        ),
+    },
+    outputs = {
+        "o": "o.js",
     },
 )

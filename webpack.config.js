@@ -1,9 +1,11 @@
 const path = require("path");
 const HtmlPlugin = require("html-webpack-plugin");
+const webpackBazel = require("./webpack-bazel");
 
-module.exports = function(env) {
+module.exports = webpackBazel(function(env) {
   return {
-    entry: "./src/index.js",
+    context: path.resolve(__dirname),
+    entry: path.resolve(__dirname, "./src/index.js"),
     output: {
       filename: "bundle.js",
       path: path.resolve(__dirname, "dist"),
@@ -24,4 +26,4 @@ module.exports = function(env) {
     },
     plugins: [new HtmlPlugin({ template: "src/index.html" })]
   };
-};
+});

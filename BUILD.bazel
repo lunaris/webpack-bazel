@@ -1,6 +1,3 @@
-# See:
-# https://github.com/bazelbuild/rules_nodejs/blob/master/packages/labs/webpack/src/cli.ts
-
 package(default_visibility = ["//visibility:public"])
 
 load("@build_bazel_rules_nodejs//:defs.bzl", "nodejs_binary")
@@ -9,28 +6,9 @@ load(":webpack.bzl", "webpack_bundle")
 webpack_bundle(
     name = "bundle",
     config = "//:webpack.config.js",
+    srcs = glob(["src/**"]),
+    dist_dir = "dist",
     plugins = [
-        "@npm//webpack-cli",
         "@npm//html-webpack-plugin",
     ],
-    srcs = glob(["src/**"]),
 )
-
-# nodejs_binary(
-#     name = "webpack",
-#     entry_point = "webpack-cli/bin/cli.js",
-#     data = [
-#         "@npm//webpack-cli",
-#         "@npm//html-webpack-plugin",
-#         #"@npm//babel-loader",
-#         "//:src",
-#     ],
-# )
-#
-# webpack_bundle(
-#     name = "bundle",
-#     srcs = glob(["src/**"]), #+ ["@npm//:node_modules"],
-#     config = "webpack.config.js",
-#     outputs = ["dist/index.html", "dist/bundle.js"],
-#     webpack = ":webpack"
-# )

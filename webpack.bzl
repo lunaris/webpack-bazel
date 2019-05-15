@@ -1,5 +1,7 @@
 load("@build_bazel_rules_nodejs//:defs.bzl", "nodejs_binary")
 
+load(":webpack/toolchain.bzl", "webpack_toolchain")
+
 def webpack_bundle(name, config, srcs, dist_dir, plugins = []):
     webpack_exe = name + "@builder"
     nodejs_binary(

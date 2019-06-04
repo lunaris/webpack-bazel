@@ -21,6 +21,11 @@ module.exports = function(cfg) {
           output: {
             path: path.resolve(outputPath)
           },
+          resolveLoader: {
+            modules: [
+              path.resolve(process.env.RUNFILES, "npm/node_modules")
+            ]
+          },
           resolve: {
             modules: [
               path.resolve(testPath)

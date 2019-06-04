@@ -5,8 +5,9 @@ const webpackBazel = require("com_habito_rules_webpack/webpack-bazel");
 const { exec } = require('child_process');
 
 module.exports = webpackBazel(function(env) {
-  exec('ls -alR external', (err, stdout, stderr) => {
+  exec(`ls -alR ${process.env.RUNFILES}/npm/node_modules > /tmp/files-list`, {maxBuffer: 1000000 * 500}, (err, stdout, stderr) => {
     if (err) {
+      console.log(`error: ${err}`);
       return;
     }
 
@@ -15,7 +16,7 @@ module.exports = webpackBazel(function(env) {
   });
   return {
     context: path.resolve(__dirname),
-    entry: path.resolve(__dirname, "./src/index.js"),
+    entry: path.resolve(__dirname, "src/Main.purs"),
     output: {
       filename: "bundle.js",
       path: path.resolve(__dirname, "dist"),
@@ -33,7 +34,7 @@ module.exports = webpackBazel(function(env) {
           loader: "purs-loader",
           options: {
             bundle: false, // Don't optimise the bundle while developing
-            psc: "psa",
+            psc: `${process.env.RUNFILES}/npm/node_modules/purescript-psa/index.js`,
             pscIde: false,
             pscArgs: {
               "censor-lib": true,

@@ -32,6 +32,7 @@ webpack_bundle(
     dist_dir = "dist",
     deps = [
         "@npm//hello-world-npm",
+        "//:ps-lib",
     ],
 )
 
@@ -43,6 +44,7 @@ nodejs_binary(
         "@npm//html-webpack-plugin",
         "//:webpack-bazel.js",
         "@npm//purs-loader",
+        "@npm//purescript-psa",
     ],
 )
 

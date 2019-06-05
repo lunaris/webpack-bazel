@@ -22,6 +22,7 @@ purescript_library(
     name = "ps-lib",
     src_strip_prefix = "ps-lib",
     srcs = glob(["ps-lib/**/*.purs"]),
+    foreign_srcs = glob(["ps-lib/**/*.js"]),
     deps = [],
 )
 
@@ -33,6 +34,7 @@ webpack_bundle(
     deps = [
         "@npm//hello-world-npm",
         "//:ps-lib",
+        "@nixpkgs_purescript//:bin",
     ],
 )
 

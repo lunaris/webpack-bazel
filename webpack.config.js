@@ -5,7 +5,9 @@ const webpackBazel = require("com_habito_rules_webpack/webpack-bazel");
 const { exec } = require('child_process');
 
 module.exports = webpackBazel(function(env) {
-  exec(`ls -alR ${process.env.RUNFILES}/npm/node_modules > /tmp/files-list`, {maxBuffer: 1000000 * 500}, (err, stdout, stderr) => {
+  process.env.PATH =
+    ['external/nixpkgs_purescript/bin', process.env.PATH].join(':');
+  exec(`ls -alR ps-lib > /tmp/files-list`, {maxBuffer: 1000000 * 500}, (err, stdout, stderr) => {
     if (err) {
       console.log(`error: ${err}`);
       return;
@@ -47,6 +49,8 @@ module.exports = webpackBazel(function(env) {
               ]
             },
             src: [
+              path.join('src', '**', '*.purs'),
+              path.join('ps-lib', '**', '*.purs'),
             ]
           }
         }

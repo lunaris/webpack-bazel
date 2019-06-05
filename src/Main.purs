@@ -1,4 +1,6 @@
-module Main (main) where
+module Main (test) where
+
+import Lib.Test (someString)
 
 test :: String
-test = "What"
+test = someString

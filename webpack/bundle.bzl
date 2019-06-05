@@ -1,5 +1,4 @@
-load("@build_bazel_rules_nodejs//internal/common:node_module_info.bzl", "NodeModuleSources")
-load("@build_bazel_rules_nodejs//internal/common:module_mappings.bzl", "module_mappings_runtime_aspect")
+load("@build_bazel_rules_nodejs//:defs.bzl", "nodejs_binary")
 
 load(
     ":context.bzl",
@@ -13,8 +12,38 @@ WebpackBundleInfo = provider(
     },
 )
 
+def webpack_bundle(
+    name,
+    config,
+    srcs,
+    cli = "@npm//webpack-cli",
+    cli_entry_point = "webpack-cli/bin/cli.js",
+    deps = [],
+    plugins = [],
+    loaders = [],
+    tools = []):
+
+    bundler = name + "@cli"
+    bundler_data = [cli, "//:webpack-bazel.js"] + plugins + loaders
+
+    nodejs_binary(
+        name = bundler,
+        entry_point = cli_entry_point,
+        data = bundler_data,
+    )
+
+    _webpack_bundle(
+        name = name,
+        bundler = bundler,
+        config = config,
+        srcs = srcs,
+        dist_dir = "dist",
+        deps = deps,
+        tools = tools,
+    )
+
 def _webpack_bundle_impl(ctx):
-    w = webpack_context(ctx)
+    w = struct(webpack = ctx.attr.bundler)
 
     runfiles = w.webpack.data_runfiles.merge(w.webpack.default_runfiles).files.to_list()
 
@@ -28,7 +57,7 @@ def _webpack_bundle_impl(ctx):
             "--env.output_path", dist.path,
             "--env.test_path", "external/npm/node_modules",
         ],
-        inputs = [ctx.file.config] + ctx.files.srcs + ctx.files.deps + ins,
+        inputs = [ctx.file.config] + ctx.files.srcs + ctx.files.deps + ctx.files.tools + ins,
         tools = [w.webpack.files_to_run.runfiles_manifest],
         input_manifests = ms,
         outputs = [dist],
@@ -49,9 +78,12 @@ def _webpack_bundle_impl(ctx):
         ),
     ]
 
-webpack_bundle = rule(
+_webpack_bundle = rule(
     implementation = _webpack_bundle_impl,
     attrs = {
+        "bundler": attr.label(
+            mandatory = True,
+        ),
         "config": attr.label(
             allow_single_file = True,
         ),
@@ -59,17 +91,16 @@ webpack_bundle = rule(
             allow_files = True,
         ),
         "dist_dir": attr.string(
-            default="dist"
+            mandatory = True,
         ),
         "deps": attr.label_list(
             allow_files = True,
-            aspects = [module_mappings_runtime_aspect],
+        ),
+        "tools": attr.label_list(
+            allow_files = True,
         ),
     },
     outputs = {
         "bundle": "%{name}.tar",
     },
-    toolchains = [
-        "@com_habito_rules_webpack//webpack:toolchain_type",
-    ],
 )

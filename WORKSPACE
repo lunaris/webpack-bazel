@@ -66,5 +66,4 @@ yarn_install(
 #load("@npm//:install_bazel_dependencies.bzl", "install_bazel_dependencies")
 #install_bazel_dependencies()
 
-register_toolchains("//:webpack")
 register_toolchains("//:purescript")

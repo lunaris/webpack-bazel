@@ -30,27 +30,18 @@ webpack_bundle(
     name = "bundle",
     config = "//:webpack.config.js",
     srcs = glob(["src/**"]),
-    dist_dir = "dist",
     deps = [
         "@npm//hello-world-npm",
         "//:ps-lib",
-        "@nixpkgs_purescript//:bin",
     ],
-)
-
-nodejs_binary(
-    name = "webpack-cli",
-    entry_point = "webpack-cli/bin/cli.js",
-    data = [
-        "@npm//webpack-cli",
+    plugins = [
         "@npm//html-webpack-plugin",
-        "//:webpack-bazel.js",
+    ],
+    loaders = [
         "@npm//purs-loader",
         "@npm//purescript-psa",
     ],
-)
-
-webpack_toolchain(
-    name = "webpack",
-    webpack = ":webpack-cli",
+    tools = [
+        "@nixpkgs_purescript//:bin",
+    ],
 )

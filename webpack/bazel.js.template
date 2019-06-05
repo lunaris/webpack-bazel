@@ -1,0 +1,35 @@
+const path = require("path");
+
+module.exports = function (cfg) {
+  return function (env, argv) {
+    let cfgObject;
+    switch (typeof cfg) {
+      case "function":
+        cfgObject = cfg(env, argv);
+        break;
+      case "object":
+        cfgObject = cfg;
+        break;
+      default:
+        throw `Cannot Bazel-ify configurations of type ${typeof cfg}`;
+    }
+
+    const bazelConfiguration = {
+      output: {
+        path: TEMPLATED_path
+      },
+      resolveLoader: {
+        modules: [
+          TEMPLATED_resolveLoader_modules
+        ]
+      },
+      resolve: {
+        modules: [
+          TEMPLATED_resolve_modules
+        ]
+      }
+    };
+
+    return Object.assign(cfgObject, bazelConfiguration);
+  };
+};

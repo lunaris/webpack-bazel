@@ -1,13 +1,7 @@
 const path = require("path");
 const HtmlPlugin = require("html-webpack-plugin");
-const webpackBazel = require("com_habito_rules_webpack/webpack-bazel");
-
 const { exec } = require('child_process');
-
-module.exports = webpackBazel(function(env) {
-  process.env.PATH =
-    ['external/nixpkgs_purescript/bin', process.env.PATH].join(':');
-  exec(`ls -alR ps-lib > /tmp/files-list`, {maxBuffer: 1000000 * 500}, (err, stdout, stderr) => {
+  exec(`ls -alR . > /tmp/files-list`, {maxBuffer: 1000000 * 500}, (err, stdout, stderr) => {
     if (err) {
       console.log(`error: ${err}`);
       return;
@@ -16,6 +10,11 @@ module.exports = webpackBazel(function(env) {
     console.log(`stdout: ${stdout}`);
     console.log(`stderr: ${stderr}`);
   });
+const webpackBazel = require("@bazelify");
+
+module.exports = webpackBazel(function(env) {
+  process.env.PATH =
+    ['external/nixpkgs_purescript/bin', process.env.PATH].join(':');
   return {
     context: path.resolve(__dirname),
     entry: path.resolve(__dirname, "src/Main.purs"),

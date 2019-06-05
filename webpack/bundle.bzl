@@ -1,4 +1,12 @@
-load("@build_bazel_rules_nodejs//:defs.bzl", "nodejs_binary")
+load(
+    "@build_bazel_rules_nodejs//internal/common:node_module_info.bzl",
+    "NodeModuleSources",
+)
+
+load(
+    "@build_bazel_rules_nodejs//:defs.bzl",
+    "nodejs_binary",
+)
 
 load(
     ":context.bzl",
@@ -24,7 +32,7 @@ def webpack_bundle(
     tools = []):
 
     bundler = name + "@cli"
-    bundler_data = [cli, "//:webpack-bazel.js"] + plugins + loaders
+    bundler_data = [cli] + plugins + loaders
 
     nodejs_binary(
         name = bundler,
@@ -45,19 +53,39 @@ def webpack_bundle(
 def _webpack_bundle_impl(ctx):
     w = struct(webpack = ctx.attr.bundler)
 
-    runfiles = w.webpack.data_runfiles.merge(w.webpack.default_runfiles).files.to_list()
-
     ins, _, ms = ctx.resolve_command(tools = [w.webpack])
+    foo(ctx.attr.deps)
 
     dist = ctx.actions.declare_directory(ctx.attr.dist_dir)
+    configurator = ctx.actions.declare_file("configurator.js")
+
+    ctx.actions.expand_template(
+        template = ctx.file._configurator_template,
+        output = configurator,
+        substitutions = {
+            "TEMPLATED_path": "\"" + dist.path + "\"",
+            "TEMPLATED_resolveLoader_modules": "",
+            "TEMPLATED_resolve_modules": "",
+        },
+    )
+
+    print(configurator.short_path)
+
+    config = ctx.actions.declare_file("webpack.config.js")
+    ctx.actions.expand_template(
+        template = ctx.file.config,
+        output = config,
+        substitutions = {
+            "@bazelify": configurator.short_path,
+        },
+    )
+
     ctx.actions.run(
         executable = w.webpack.files_to_run.executable,
         arguments = [
-            "--config", ctx.file.config.path,
-            "--env.output_path", dist.path,
-            "--env.test_path", "external/npm/node_modules",
+            "--config", config.path,
         ],
-        inputs = [ctx.file.config] + ctx.files.srcs + ctx.files.deps + ctx.files.tools + ins,
+        inputs = [ctx.file.config, configurator] + ctx.files.srcs + ctx.files.deps + ctx.files.tools + ins,
         tools = [w.webpack.files_to_run.runfiles_manifest],
         input_manifests = ms,
         outputs = [dist],
@@ -99,8 +127,41 @@ _webpack_bundle = rule(
         "tools": attr.label_list(
             allow_files = True,
         ),
+        "_configurator_template": attr.label(
+            default = "//webpack:bazel.js.template",
+            allow_single_file = True,
+        ),
     },
     outputs = {
         "bundle": "%{name}.tar",
+    },
+)
+
+def foo(fs):
+  for f in fs:
+    if NodeModuleSources in f:
+      print(f[NodeModuleSources])
+
+def _webpack_bazel_javascript_configurator_impl(ctx):
+    ctx.actions.expand_template(
+        template = ctx.file._template,
+        output = ctx.outputs.configurator,
+        substitutions = {
+            "TEMPLATED_path": "\"\"",
+            "TEMPLATED_resolveLoader_modules": "",
+            "TEMPLATED_resolve_modules": "",
+        },
+    )
+
+_webpack_bazel_javascript_configurator = rule(
+    implementation = _webpack_bazel_javascript_configurator_impl,
+    attrs = {
+        "_template": attr.label(
+            allow_single_file = True,
+            default = "//webpack:bazel.js.template",
+        ),
+    },
+    outputs = {
+        "configurator": "%{name}.js",
     },
 )

@@ -10,17 +10,14 @@ const { exec } = require('child_process');
     console.log(`stdout: ${stdout}`);
     console.log(`stderr: ${stderr}`);
   });
-const webpackBazel = require("@bazelify");
+const bazelify = require(process.env.BAZELIFY);
 
-module.exports = webpackBazel(function(env) {
-  process.env.PATH =
-    ['external/nixpkgs_purescript/bin', process.env.PATH].join(':');
+module.exports = bazelify(function(env) {
   return {
     context: path.resolve(__dirname),
     entry: path.resolve(__dirname, "src/Main.purs"),
     output: {
       filename: "bundle.js",
-      path: path.resolve(__dirname, "dist"),
       publicPath: "./" // FIXME
     },
 
@@ -35,7 +32,7 @@ module.exports = webpackBazel(function(env) {
           loader: "purs-loader",
           options: {
             bundle: false, // Don't optimise the bundle while developing
-            psc: `${process.env.RUNFILES}/npm/node_modules/purescript-psa/index.js`,
+            psc: 'psa', //`${process.env.RUNFILES}/npm/node_modules/purescript-psa/index.js`,
             pscIde: false,
             pscArgs: {
               "censor-lib": true,

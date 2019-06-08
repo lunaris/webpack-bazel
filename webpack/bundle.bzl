@@ -47,16 +47,23 @@ def webpack_bundle(
         srcs = srcs,
         dist_dir = "dist",
         deps = deps,
+        plugins = plugins,
+        loaders = loaders,
         tools = tools,
     )
 
 def _webpack_bundle_impl(ctx):
+    dep_workspaces = _node_module_workspaces_array_literal(ctx.attr.deps)
+    plugin_workspaces = _node_module_workspaces_array_literal(ctx.attr.plugins)
+    loader_workspaces = _node_module_workspaces_array_literal(ctx.attr.loaders)
+    tool_paths = _tool_paths_array_literal(ctx.files.tools)
+
     w = struct(webpack = ctx.attr.bundler)
 
     ins, _, ms = ctx.resolve_command(tools = [w.webpack])
-    foo(ctx.attr.deps)
 
     dist = ctx.actions.declare_directory(ctx.attr.dist_dir)
+
     configurator = ctx.actions.declare_file("configurator.js")
 
     ctx.actions.expand_template(
@@ -64,27 +71,21 @@ def _webpack_bundle_impl(ctx):
         output = configurator,
         substitutions = {
             "TEMPLATED_path": "\"" + dist.path + "\"",
-            "TEMPLATED_resolveLoader_modules": "",
-            "TEMPLATED_resolve_modules": "",
-        },
-    )
-
-    print(configurator.short_path)
-
-    config = ctx.actions.declare_file("webpack.config.js")
-    ctx.actions.expand_template(
-        template = ctx.file.config,
-        output = config,
-        substitutions = {
-            "@bazelify": configurator.short_path,
+            "TEMPLATED_dep_workspaces": dep_workspaces,
+            "TEMPLATED_plugin_workspaces": plugin_workspaces,
+            "TEMPLATED_loader_workspaces": loader_workspaces,
+            "TEMPLATED_tool_paths": tool_paths,
         },
     )
 
     ctx.actions.run(
         executable = w.webpack.files_to_run.executable,
         arguments = [
-            "--config", config.path,
+            "--config", ctx.file.config.path,
         ],
+        env = {
+            "BAZELIFY": "./" + configurator.path,
+        },
         inputs = [ctx.file.config, configurator] + ctx.files.srcs + ctx.files.deps + ctx.files.tools + ins,
         tools = [w.webpack.files_to_run.runfiles_manifest],
         input_manifests = ms,
@@ -124,6 +125,12 @@ _webpack_bundle = rule(
         "deps": attr.label_list(
             allow_files = True,
         ),
+        "plugins": attr.label_list(
+            allow_files = True,
+        ),
+        "loaders": attr.label_list(
+            allow_files = True,
+        ),
         "tools": attr.label_list(
             allow_files = True,
         ),
@@ -137,31 +144,20 @@ _webpack_bundle = rule(
     },
 )
 
-def foo(fs):
-  for f in fs:
-    if NodeModuleSources in f:
-      print(f[NodeModuleSources])
+def _node_module_workspaces_array_literal(xs):
+    workspaces = {}
+    for x in xs:
+        if NodeModuleSources in x:
+            workspaces[x[NodeModuleSources].workspace] = True
 
-def _webpack_bazel_javascript_configurator_impl(ctx):
-    ctx.actions.expand_template(
-        template = ctx.file._template,
-        output = ctx.outputs.configurator,
-        substitutions = {
-            "TEMPLATED_path": "\"\"",
-            "TEMPLATED_resolveLoader_modules": "",
-            "TEMPLATED_resolve_modules": "",
-        },
-    )
+    return _array_literal(workspaces.keys())
 
-_webpack_bazel_javascript_configurator = rule(
-    implementation = _webpack_bazel_javascript_configurator_impl,
-    attrs = {
-        "_template": attr.label(
-            allow_single_file = True,
-            default = "//webpack:bazel.js.template",
-        ),
-    },
-    outputs = {
-        "configurator": "%{name}.js",
-    },
-)
+def _tool_paths_array_literal(tools):
+    paths = {}
+    for f in tools:
+        paths[f.dirname] = True
+
+    return _array_literal(paths.keys())
+
+def _array_literal(xs):
+    return "[\"" + "\",\"".join(xs) + "\"]"

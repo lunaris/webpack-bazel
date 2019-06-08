@@ -16,19 +16,19 @@ module.exports = function (cfg) {
 
     const bazelConfiguration = {
       output: {
-        path: TEMPLATED_path
+        path: path.resolve(TEMPLATED_path)
       },
       resolveLoader: {
-        modules: [
-          TEMPLATED_resolveLoader_modules
-        ]
+        modules: TEMPLATED_loader_workspaces
+          .map(ws => path.resolve(process.env.RUNFILES, ws, "node_modules"))
       },
       resolve: {
-        modules: [
-          TEMPLATED_resolve_modules
-        ]
+        modules: [...TEMPLATED_dep_workspaces, ...TEMPLATED_plugin_workspaces]
+          .map(ws => path.resolve(`external/${ws}/node_modules`))
       }
     };
+
+    process.env.PATH = [...TEMPLATED_tool_paths, process.env.PATH].join(":");
 
     return Object.assign(cfgObject, bazelConfiguration);
   };

@@ -32,7 +32,7 @@ module.exports = bazelify(function(env) {
           loader: "purs-loader",
           options: {
             bundle: false, // Don't optimise the bundle while developing
-            psc: 'psa', //`${process.env.RUNFILES}/npm/node_modules/purescript-psa/index.js`,
+            psc: require.resolve("purescript-psa"),
             pscIde: false,
             pscArgs: {
               "censor-lib": true,

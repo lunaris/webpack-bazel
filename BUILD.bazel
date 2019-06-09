@@ -1,14 +1,48 @@
 package(default_visibility = ["//visibility:public"])
 
 load("@build_bazel_rules_nodejs//:defs.bzl", "nodejs_binary")
-load(":webpack.bzl", "webpack_bundle")
+load("@com_habito_rules_purescript//purescript:purescript.bzl", "purescript_library")
+load("//webpack:webpack.bzl", "webpack_bundle")
+
+load(
+    "@com_habito_rules_purescript//purescript:purescript.bzl",
+    "purescript_toolchain",
+)
+
+purescript_toolchain(
+    name = "purescript",
+    version = "0.12.1",
+    tools = [
+        "@nixpkgs_purescript//:bin",
+        "@nixpkgs_tar//:bin",
+    ],
+)
+
+purescript_library(
+    name = "ps-lib",
+    src_strip_prefix = "ps-lib",
+    srcs = glob(["ps-lib/**/*.purs"]),
+    foreign_srcs = glob(["ps-lib/**/*.js"]),
+    deps = [],
+)
 
 webpack_bundle(
     name = "bundle",
     config = "//:webpack.config.js",
     srcs = glob(["src/**"]),
-    dist_dir = "dist",
+    deps = [
+        "@npm//hello-world-npm",
+        "//:ps-lib",
+        "@psc-package//:prelude",
+    ],
     plugins = [
         "@npm//html-webpack-plugin",
+    ],
+    loaders = [
+        "@npm//purs-loader",
+        "@npm//purescript-psa",
+    ],
+    tools = [
+        "@nixpkgs_purescript//:bin",
     ],
 )

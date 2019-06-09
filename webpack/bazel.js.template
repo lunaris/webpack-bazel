@@ -1,0 +1,81 @@
+const path = require("path");
+
+/*
+ * This file is a template for a NodeJS module which exports a set of functions
+ * for building Bazel-compatible Webpack configurations. At the heart of it is
+ * the `bazelify` function, which takes a Webpack configuration (which could be
+ * an object literal or a function that produces an object literal when passed
+ * a Webpack environment) and modifies it so that:
+ *
+ * - The output directory is fixed to a directory in the Bazel output root, so
+ *   that Bazel can reason about it and bundle it.
+ *
+ * - It is capable of resolving plugins, loaders and dependencies according to
+ *   those specified in the Bazel dependency graph.
+ *
+ * To this end, this template should be expanded with the following
+ * substitutions:
+ *
+ * - TEMPLATED_path: a string naming the Webpack output directory.
+ *
+ * - TEMPLATED_dep_workspaces: an array of workspaces that might contain
+ *   `node_modules` directories exposing dependencies defined in the `deps`
+ *   attribute of a `webpack_bundle` rule.
+ *
+ * - TEMPLATED_dep_file_paths: an array of paths representing the files
+ *   provided by dependencies defined in the `deps` attribute of a
+ *   `webpack_bundle` rule.
+ *
+ * - TEMPLATED_plugin_workspaces: an array of workspaces that might contain
+ *   `node_modules` directories exposing dependencies defined in the `plugins`
+ *   attribute of a `webpack_bundle` rule.
+ *
+ * - TEMPLATED_loader_workspaces: an array of workspaces that might contain
+ *   `node_modules` directories exposing dependencies defined in the `loaders`
+ *   attribute of a `webpack_bundle` rule.
+ *
+ * - TEMPLATED_tool_paths: an array of directories containing binary tools
+ *   defined in the `tools` attribute of a `webpack_bundle` rule.
+ */
+
+module.exports = bazelify;
+
+function bazelify(cfg) {
+  return function (env, argv) {
+    let cfgObject;
+    switch (typeof cfg) {
+      case "function":
+        cfgObject = cfg(env, argv);
+        break;
+      case "object":
+        cfgObject = cfg;
+        break;
+      default:
+        throw `Cannot Bazel-ify configurations of type ${typeof cfg}`;
+    }
+
+    const bazelConfiguration = {
+      output: {
+        path: path.resolve(TEMPLATED_path)
+      },
+      resolveLoader: {
+        modules: TEMPLATED_loader_workspaces
+          .map(ws => path.resolve(process.env.RUNFILES, ws, "node_modules"))
+      },
+      resolve: {
+        modules: [...TEMPLATED_dep_workspaces, ...TEMPLATED_plugin_workspaces]
+          .map(ws => path.resolve(`external/${ws}/node_modules`))
+      }
+    };
+
+    // In order to make binary tools visible to Webpack, we hack the `PATH`
+    // environment variable to contain the paths made available to us through
+    // template expansion and the `tools` attribute of the `webpack_bundle`
+    // rule.
+    process.env.PATH = [...TEMPLATED_tool_paths, process.env.PATH].join(":");
+
+    return Object.assign(cfgObject, bazelConfiguration);
+  };
+}
+
+bazelify.dependencyFiles = TEMPLATED_dep_file_paths;

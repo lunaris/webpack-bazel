@@ -1,29 +1,47 @@
-const path = require("path");
 const HtmlPlugin = require("html-webpack-plugin");
-const webpackBazel = require("./webpack-bazel");
+const bazelify = require(process.env.BAZELIFY);
+const path = require("path");
 
-module.exports = webpackBazel(function(env) {
+module.exports = bazelify(function(env) {
   return {
     context: path.resolve(__dirname),
-    entry: path.resolve(__dirname, "./src/index.js"),
+    entry: path.resolve(__dirname, "src/Main.purs"),
     output: {
       filename: "bundle.js",
-      path: path.resolve(__dirname, "dist"),
-      publicPath: "./" // FIXME
+    },
+
+    resolve: {
+      extensions: [".purs", ".js"]
     },
     module: {
       rules: [
-        // {
-        //   test: /\.js$/,
-        //   use: [
-        //     {
-        //       loader: "babel-loader",
-        //       options: {}
-        //     }
-        //   ]
-        // }
+        {
+          test: /\.purs$/,
+          loader: "purs-loader",
+          options: {
+            bundle: false, // Don't optimise the bundle while developing
+            psc: require.resolve("purescript-psa"),
+            pscIde: false,
+            pscArgs: {
+              "censor-lib": true,
+              strict: true,
+              stash: true,
+              "censor-codes": [
+                "ImplicitQualifiedImportReExport",
+                "ImplicitQualifiedImport",
+                "UserDefinedWarning"
+              ]
+            },
+            src: [
+              path.join("src", "**", "*.purs"),
+              ...bazelify.dependencyFiles.filter(f => f.endsWith(".purs"))
+            ]
+          }
+        }
       ]
     },
-    plugins: [new HtmlPlugin({ template: "src/index.html" })]
+    plugins: [
+      new HtmlPlugin({ template: "src/index.html" })
+    ]
   };
 });

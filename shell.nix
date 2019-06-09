@@ -11,5 +11,6 @@ mkShell {
     bazel
     git
     nix
+    purescript
   ];
 }

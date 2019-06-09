@@ -1,0 +1,7 @@
+exports_files([
+    # Bazel libraries.
+    "webpack.bzl",
+
+    # Bazel JavaScript utilities
+    "bazel.js.template",
+])

@@ -32,15 +32,11 @@ nixpkgs_package(
     attribute_path = "gnutar",
 )
 
-local_repository(
+http_archive(
     name = "com_habito_rules_purescript",
-    path = "/Users/will/git/personal/github/rules_purescript",
+    strip_prefix = "rules_purescript-0ef7ceb5558e7716d22efa3fb27debda2e6b47c8",
+    urls = ["https://github.com/heyhabito/rules_purescript/archive/0ef7ceb5558e7716d22efa3fb27debda2e6b47c8.tar.gz"],
 )
-# http_archive(
-#     name = "com_habito_rules_purescript",
-#     strip_prefix = "rules_purescript-b7ddeece549f0694cdbdc4edde847ab1bab98771",
-#     urls = ["https://github.com/heyhabito/rules_purescript/archive/b7ddeece549f0694cdbdc4edde847ab1bab98771.tar.gz"],
-# )
 
 load(
     "@com_habito_rules_purescript//purescript:repositories.bzl",
